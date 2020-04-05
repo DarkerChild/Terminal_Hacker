@@ -1,7 +1,8 @@
-﻿using System;
-using System.Collections;
-using System.Collections.Generic;
+﻿ //using System;
+//using System.Collections;
+//using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 public class Rocket : MonoBehaviour
 {
@@ -33,11 +34,10 @@ public class Rocket : MonoBehaviour
         {
             case "Respawn":
                 // DO NOTHING
-                print("Fine");
                 break;
             case "Finish":
                 // DO NOTHING
-                print("Fine");
+                SceneManager.LoadScene(1);
                 break;
             case "Fuel":
                 // Collect fuel
@@ -46,6 +46,7 @@ public class Rocket : MonoBehaviour
                 break;
             default:
                 print("Dead");
+                SceneManager.LoadScene(0);
                 //TODO Kill player
                 break;
         }
