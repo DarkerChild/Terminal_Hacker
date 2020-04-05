@@ -7,21 +7,27 @@ using UnityEngine.SceneManagement;
 public class Rocket : MonoBehaviour
 {
     [SerializeField] float rcsThrust = 100f;
-    [SerializeField] float thrustScale = 1f;
+    [SerializeField] float mainThrust = 1f;
     [SerializeField] int fuelUseRate = 1;
     [SerializeField] float fuelLevel = 999f;
     [SerializeField] int lives = 3;
     [SerializeField] int level;
     [SerializeField] float dyingTime = 1f;
     [SerializeField] float transcendingTime = 1f;
+
     [SerializeField] AudioClip mainEngine;
     [SerializeField] AudioClip success;
     [SerializeField] AudioClip death;
 
+    [SerializeField] ParticleSystem mainEngineParticles;
+    [SerializeField] ParticleSystem portThrusterParticles;
+    [SerializeField] ParticleSystem starbordThrusterParticles;
+    [SerializeField] ParticleSystem successParticles;
+    [SerializeField] ParticleSystem deathParticles;
+
     Rigidbody rigidBody;
     AudioSource audioSource;
     Scene scene;
-
 
     enum State { Alive, Dying, Transcending };
     State state = State.Alive;
@@ -31,6 +37,7 @@ public class Rocket : MonoBehaviour
     {
         rigidBody = GetComponent<Rigidbody>();
         audioSource = GetComponent<AudioSource>();
+        //rocketBody = GetComponent<>;
     }
 
     // Update is called once per frame
@@ -64,15 +71,25 @@ public class Rocket : MonoBehaviour
         if (Collider.gameObject.tag == "Fuel")
         {
             fuelLevel += 100;
-            Collider.gameObject.SetActive(false);
+            ParticleSystem fuelPickupParticles;
+            MeshRenderer fuelPickupMeshRenderer;
+            fuelPickupParticles = Collider.gameObject.GetComponentInChildren<ParticleSystem>();
+            fuelPickupParticles.Play();
+            fuelPickupMeshRenderer = Collider.gameObject.GetComponentInChildren<MeshRenderer>();
+            fuelPickupMeshRenderer.enabled = false;
         }
     }
 
     private void StartSuccessSequence()
     {
         state = State.Transcending;
+        rigidBody.constraints = RigidbodyConstraints.FreezeAll;
         audioSource.Stop();
+        mainEngineParticles.Stop();
+        portThrusterParticles.Stop();
+        starbordThrusterParticles.Stop();
         audioSource.PlayOneShot(success);
+        successParticles.Play();
         Invoke("LoadNextLevel", transcendingTime);
     }
 
@@ -81,7 +98,11 @@ public class Rocket : MonoBehaviour
         state = State.Dying;
         rigidBody.constraints = RigidbodyConstraints.None;
         audioSource.Stop();
+        mainEngineParticles.Stop();
+        portThrusterParticles.Stop();
+        starbordThrusterParticles.Stop();
         audioSource.PlayOneShot(death);
+        deathParticles.Play();
         Invoke("LoadFirstLevel", dyingTime);
     }
 
@@ -97,23 +118,43 @@ public class Rocket : MonoBehaviour
         state = State.Alive;
     }
 
-
-
     private void RespondToRotateInput()
     {
         rigidBody.freezeRotation = true; //Take manual control of rotation
         float rotationThisFrame = rcsThrust * Time.deltaTime;
 
         if (Input.GetKey(KeyCode.A) && Input.GetKey(KeyCode.D)) {
-
+            if (!portThrusterParticles.isPlaying)
+            {
+                portThrusterParticles.Play();
+            }
+            if (!starbordThrusterParticles.isPlaying)
+            {
+                starbordThrusterParticles.Play();
+            }
         }
         else if (Input.GetKey(KeyCode.A))
         {
             transform.Rotate(Vector3.forward * rotationThisFrame);
+            if (!starbordThrusterParticles.isPlaying)
+            {
+                starbordThrusterParticles.Play();
+                portThrusterParticles.Stop();
+            }
         }
         else if (Input.GetKey(KeyCode.D))
         {
             transform.Rotate(Vector3.back * rotationThisFrame);
+            if (!portThrusterParticles.isPlaying)
+            {
+                portThrusterParticles.Play();
+                starbordThrusterParticles.Stop();
+            }
+        }
+        else
+        {
+            portThrusterParticles.Stop();
+            starbordThrusterParticles.Stop();
         }
         rigidBody.freezeRotation = false; //Resume physics control of rotation
     }
@@ -127,19 +168,21 @@ public class Rocket : MonoBehaviour
         else
         {
             audioSource.Stop();
+            mainEngineParticles.Stop();
         }
     }
 
     private void ApplyThrust()
     {
-        if (Input.GetKey(KeyCode.Space)) // Can thrust while rotating
+        rigidBody.AddRelativeForce(Vector3.up * mainThrust * Time.deltaTime);
+        fuelLevel = fuelLevel - (fuelUseRate * Time.deltaTime);
+        if (!audioSource.isPlaying)
         {
-            rigidBody.AddRelativeForce(Vector3.up * thrustScale);
-            fuelLevel = fuelLevel - (Time.deltaTime * fuelUseRate);
-            if (!audioSource.isPlaying)
-            {
-                audioSource.PlayOneShot(mainEngine);
-            }
+            audioSource.PlayOneShot(mainEngine);
+        }
+        if (!mainEngineParticles.isPlaying)
+        {
+            mainEngineParticles.Play();
         }
     }
 }
