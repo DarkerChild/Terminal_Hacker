@@ -8,14 +8,18 @@ public class Rocket : MonoBehaviour
 {
     [SerializeField] float rcsThrust = 100f;
     [SerializeField] float mainThrust = 1f;
-    [SerializeField] int fuelUseRate = 1;
-    [SerializeField] float fuelLevel = 999f;
+    [SerializeField] float mainEngineFuelUseRate = 1f;
+    [SerializeField] float thrusterFuelUseRate = 1f;
+    [SerializeField] float startingFuelLevel = 999f;
+    [SerializeField] float currentFuelLevel;
     [SerializeField] int lives = 3;
     [SerializeField] int level;
     [SerializeField] float dyingTime = 1f;
     [SerializeField] float transcendingTime = 1f;
 
     [SerializeField] AudioClip mainEngine;
+    [SerializeField] AudioClip portThrusterEngine;
+    [SerializeField] AudioClip starbordThrusterEngine;
     [SerializeField] AudioClip success;
     [SerializeField] AudioClip death;
 
@@ -25,27 +29,46 @@ public class Rocket : MonoBehaviour
     [SerializeField] ParticleSystem successParticles;
     [SerializeField] ParticleSystem deathParticles;
 
+    Vector3 startingPosition;
     Rigidbody rigidBody;
-    AudioSource audioSource;
+    AudioSource[] audioSources;
+    AudioSource audiosourceMainEngine;
+    AudioSource audiosourcePortThruster;
+    AudioSource audiosourceStarbordThruster;
+    MeshRenderer meshRenderer;
     Scene scene;
 
     enum State { Alive, Dying, Transcending };
     State state = State.Alive;
+    
 
     // Start is called before the first frame update
     void Start()
     {
         rigidBody = GetComponent<Rigidbody>();
-        audioSource = GetComponent<AudioSource>();
-        //rocketBody = GetComponent<>;
+        audioSources = GetComponents<AudioSource>();
+        meshRenderer = GetComponent<MeshRenderer>();
+        audiosourceMainEngine = audioSources[0];
+        audiosourcePortThruster = audioSources[1];
+        audiosourceStarbordThruster = audioSources[2];
+        startingPosition = transform.position;
+        currentFuelLevel = startingFuelLevel;
     }
 
     // Update is called once per frame
     void Update()
     {
         if (state == State.Alive) {
-            RespondToRotateInput();
-            RespondToThrustInput();
+            if (currentFuelLevel > 0)
+            {
+                RespondToRotateInput();
+                RespondToThrustInput();
+            }
+            else
+            {
+                StopShipSoundsAndParticles();
+            }
+
         }
     }
 
@@ -70,13 +93,18 @@ public class Rocket : MonoBehaviour
     {
         if (Collider.gameObject.tag == "Fuel")
         {
-            fuelLevel += 100;
+            currentFuelLevel += 100;
             ParticleSystem fuelPickupParticles;
-            MeshRenderer fuelPickupMeshRenderer;
             fuelPickupParticles = Collider.gameObject.GetComponentInChildren<ParticleSystem>();
             fuelPickupParticles.Play();
+
+            MeshRenderer fuelPickupMeshRenderer;
             fuelPickupMeshRenderer = Collider.gameObject.GetComponentInChildren<MeshRenderer>();
             fuelPickupMeshRenderer.enabled = false;
+
+            Collider fuelPickupCollider;
+            fuelPickupCollider = Collider.gameObject.GetComponent<Collider>();
+            fuelPickupCollider.enabled = false;
         }
     }
 
@@ -84,11 +112,8 @@ public class Rocket : MonoBehaviour
     {
         state = State.Transcending;
         rigidBody.constraints = RigidbodyConstraints.FreezeAll;
-        audioSource.Stop();
-        mainEngineParticles.Stop();
-        portThrusterParticles.Stop();
-        starbordThrusterParticles.Stop();
-        audioSource.PlayOneShot(success);
+        StopShipSoundsAndParticles();
+        audiosourceMainEngine.PlayOneShot(success);
         successParticles.Play();
         Invoke("LoadNextLevel", transcendingTime);
     }
@@ -97,24 +122,56 @@ public class Rocket : MonoBehaviour
     {
         state = State.Dying;
         rigidBody.constraints = RigidbodyConstraints.None;
-        audioSource.Stop();
+        StopShipSoundsAndParticles();
+        audiosourceMainEngine.PlayOneShot(death);
+        deathParticles.Play();
+        lives--;
+        if (lives < 1)
+        {
+            Invoke("LoadFirstLevel", dyingTime);
+        }
+        else
+        {
+            Invoke("resetPosition", dyingTime);
+        }
+
+    }
+
+    private void resetPosition()
+    {
+        //transform.rotation.
+
+        rigidBody.freezeRotation = true;
+        rigidBody.velocity = Vector3.zero;
+        transform.rotation = Quaternion.identity;
+        rigidBody.angularVelocity = Vector3.zero;
+        transform.position = startingPosition;
+        currentFuelLevel = startingFuelLevel;
+        state = State.Alive;
+        rigidBody.freezeRotation = false;
+    }
+
+    private void StopShipSoundsAndParticles()
+    {
+        audiosourceMainEngine.Stop();
+        audiosourcePortThruster.Stop();
+        audiosourceStarbordThruster.Stop();
         mainEngineParticles.Stop();
         portThrusterParticles.Stop();
         starbordThrusterParticles.Stop();
-        audioSource.PlayOneShot(death);
-        deathParticles.Play();
-        Invoke("LoadFirstLevel", dyingTime);
     }
 
     private void LoadNextLevel()
     {
         SceneManager.LoadScene(1);
         state = State.Alive;
+        currentFuelLevel = startingFuelLevel;
     }
 
     private void LoadFirstLevel()
     {
         SceneManager.LoadScene(0);
+        currentFuelLevel = startingFuelLevel;
         state = State.Alive;
     }
 
@@ -123,40 +180,82 @@ public class Rocket : MonoBehaviour
         rigidBody.freezeRotation = true; //Take manual control of rotation
         float rotationThisFrame = rcsThrust * Time.deltaTime;
 
-        if (Input.GetKey(KeyCode.A) && Input.GetKey(KeyCode.D)) {
-            if (!portThrusterParticles.isPlaying)
-            {
-                portThrusterParticles.Play();
-            }
-            if (!starbordThrusterParticles.isPlaying)
-            {
-                starbordThrusterParticles.Play();
-            }
+        if (Input.GetKey(KeyCode.A) && Input.GetKey(KeyCode.D))
+        {
+            currentFuelLevel = currentFuelLevel - (2* thrusterFuelUseRate * Time.deltaTime);
+            TurnOnPortThrusterParticles();
+            TurnOnStarbordThrusterParticles();
+            TurnOnPortThrusterAudio();
+            TurnOnStarbordThrusterAudio();
         }
         else if (Input.GetKey(KeyCode.A))
         {
-            transform.Rotate(Vector3.forward * rotationThisFrame);
-            if (!starbordThrusterParticles.isPlaying)
-            {
-                starbordThrusterParticles.Play();
-                portThrusterParticles.Stop();
-            }
+            RotateLeft(rotationThisFrame);
         }
         else if (Input.GetKey(KeyCode.D))
         {
-            transform.Rotate(Vector3.back * rotationThisFrame);
-            if (!portThrusterParticles.isPlaying)
-            {
-                portThrusterParticles.Play();
-                starbordThrusterParticles.Stop();
-            }
+            RotateRight(rotationThisFrame);
         }
         else
         {
             portThrusterParticles.Stop();
             starbordThrusterParticles.Stop();
+            audiosourcePortThruster.Stop();
+            audiosourceStarbordThruster.Stop();
         }
         rigidBody.freezeRotation = false; //Resume physics control of rotation
+    }
+
+    private void RotateRight(float rotationThisFrame)
+    {
+        transform.Rotate(Vector3.back * rotationThisFrame);
+        currentFuelLevel = currentFuelLevel - (thrusterFuelUseRate * Time.deltaTime);
+        TurnOnPortThrusterParticles();
+        TurnOnPortThrusterAudio();
+        starbordThrusterParticles.Stop();
+        audiosourceStarbordThruster.Stop();
+    }
+
+    private void RotateLeft(float rotationThisFrame)
+    {
+        transform.Rotate(Vector3.forward * rotationThisFrame);
+        currentFuelLevel = currentFuelLevel - (thrusterFuelUseRate * Time.deltaTime);
+        TurnOnStarbordThrusterParticles();
+        TurnOnStarbordThrusterAudio();
+        portThrusterParticles.Stop();
+        audiosourcePortThruster.Stop();
+    }
+
+    private void TurnOnStarbordThrusterAudio()
+    {
+        if (!audiosourceStarbordThruster.isPlaying) 
+        { 
+            audiosourceStarbordThruster.Play(); 
+        }
+    }
+
+    private void TurnOnPortThrusterAudio()
+    {
+        if (!audiosourcePortThruster.isPlaying) 
+        { 
+            audiosourcePortThruster.Play(); 
+        }
+    }
+
+    private void TurnOnStarbordThrusterParticles()
+    {
+        if (!starbordThrusterParticles.isPlaying) 
+        { 
+            starbordThrusterParticles.Play(); 
+        }
+    }
+
+    private void TurnOnPortThrusterParticles()
+    {
+        if (!portThrusterParticles.isPlaying) 
+        {
+            portThrusterParticles.Play(); 
+        }
     }
 
     private void RespondToThrustInput()
@@ -167,7 +266,7 @@ public class Rocket : MonoBehaviour
         }
         else
         {
-            audioSource.Stop();
+            audiosourceMainEngine.Stop();
             mainEngineParticles.Stop();
         }
     }
@@ -175,10 +274,10 @@ public class Rocket : MonoBehaviour
     private void ApplyThrust()
     {
         rigidBody.AddRelativeForce(Vector3.up * mainThrust * Time.deltaTime);
-        fuelLevel = fuelLevel - (fuelUseRate * Time.deltaTime);
-        if (!audioSource.isPlaying)
+        currentFuelLevel = currentFuelLevel - (mainEngineFuelUseRate * Time.deltaTime);
+        if (!audiosourceMainEngine.isPlaying)
         {
-            audioSource.PlayOneShot(mainEngine);
+            audiosourceMainEngine.PlayOneShot(mainEngine);
         }
         if (!mainEngineParticles.isPlaying)
         {
