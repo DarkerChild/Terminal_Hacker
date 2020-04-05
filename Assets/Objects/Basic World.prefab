@@ -196,6 +196,11 @@ PrefabInstance:
       propertyPath: m_Name
       value: Ceiling
       objectReference: {fileID: 0}
+    - target: {fileID: 3484978035559030905, guid: fac8759f4a3292b43a89b08cd8a001cc,
+        type: 3}
+      propertyPath: m_Enabled
+      value: 1
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: fac8759f4a3292b43a89b08cd8a001cc, type: 3}
 --- !u!4 &4283818284066853701 stripped

@@ -62,7 +62,7 @@ AudioSource:
   m_Enabled: 1
   serializedVersion: 4
   OutputAudioMixerGroup: {fileID: 0}
-  m_audioClip: {fileID: 8300000, guid: 330e9f9b911488c47bfeeef6c4384968, type: 3}
+  m_audioClip: {fileID: 0}
   m_PlayOnAwake: 0
   m_Volume: 1
   m_Pitch: 1
@@ -162,8 +162,15 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   rcsThrust: 160
   thrustScale: 15
+  fuelUseRate: 1
   fuelLevel: 999
   lives: 3
+  level: 0
+  dyingTime: 2.5
+  transcendingTime: 1
+  mainEngine: {fileID: 8300000, guid: 330e9f9b911488c47bfeeef6c4384968, type: 3}
+  victorySound: {fileID: 8300000, guid: 10a53df8bca8f39459d5e9d16c8a3d68, type: 3}
+  deathSound: {fileID: 8300000, guid: 173cc799ca231f048a04a3298c58c4f6, type: 3}
 --- !u!1 &1978879002100066820
 GameObject:
   m_ObjectHideFlags: 0
