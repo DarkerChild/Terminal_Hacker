@@ -37,8 +37,9 @@ public class Rocket : MonoBehaviour
     AudioSource audiosourcePortThruster;
     AudioSource audiosourceStarbordThruster;
 
-    enum State { Alive, Dying, Transcending };
-    State state = State.Alive;
+    //enum State { Alive, Dying, Transcending };
+    //State state = State.Alive;
+    bool isTransitioning = false;
 
     bool CollisionsDisabled = false;
 
@@ -58,7 +59,7 @@ public class Rocket : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        if (state == State.Alive)
+        if (!isTransitioning)
         {
             if (currentFuelLevel > 0)
             {
@@ -90,7 +91,7 @@ public class Rocket : MonoBehaviour
 
     void OnCollisionEnter(Collision collision)
     {
-        if (state != State.Alive || (CollisionsDisabled)) {return;} //Ignore collisions if not alive.
+        if (isTransitioning || (CollisionsDisabled)) {return;} //Ignore collisions if not alive.
 
         switch (collision.gameObject.tag)
         {
@@ -131,7 +132,7 @@ public class Rocket : MonoBehaviour
 
     private void StartSuccessSequence()
     {
-        state = State.Transcending;
+        isTransitioning = true;
         rigidBody.constraints = RigidbodyConstraints.FreezeAll;
         StopShipSoundsAndParticles();
         audiosourceMainEngine.PlayOneShot(success);
@@ -141,7 +142,7 @@ public class Rocket : MonoBehaviour
 
     private void StartDeathSequence()
     {
-        state = State.Dying;
+        isTransitioning = true;
         rigidBody.constraints = RigidbodyConstraints.None;
         StopShipSoundsAndParticles();
         audiosourceMainEngine.PlayOneShot(death);
@@ -168,7 +169,7 @@ public class Rocket : MonoBehaviour
         transform.position = startingPosition;
         currentFuelLevel = startingFuelLevel;
         rigidBody.freezeRotation = false;
-        state = State.Alive;
+        isTransitioning = false;
     }
 
     private void StopShipSoundsAndParticles()
@@ -184,7 +185,7 @@ public class Rocket : MonoBehaviour
     private void LoadFirstLevel()
     {
         SceneManager.LoadScene(0);
-        state = State.Alive;
+        isTransitioning = false;
     }
 
     private void LoadNextLevel()
@@ -200,13 +201,13 @@ public class Rocket : MonoBehaviour
             nextSceneIndex = currentSceneIndex+1 ;
         }
         SceneManager.LoadScene(nextSceneIndex);
-        state = State.Alive;
+        isTransitioning = false;
     }
 
 
     private void RespondToRotateInput()
     {
-        rigidBody.freezeRotation = true; //Take manual control of rotation
+        rigidBody.angularVelocity = Vector3.zero; //Remove angular velocity.
         float rotationThisFrame = rcsThrust * Time.deltaTime;
 
         if (Input.GetKey(KeyCode.A) && Input.GetKey(KeyCode.D))
@@ -228,7 +229,7 @@ public class Rocket : MonoBehaviour
             audiosourcePortThruster.Stop();
             audiosourceStarbordThruster.Stop();
         }
-        rigidBody.freezeRotation = false; //Resume physics control of rotation
+
     }
 
     private void RotateBothDirections()

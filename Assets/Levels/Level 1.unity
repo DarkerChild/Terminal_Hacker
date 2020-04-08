@@ -306,6 +306,14 @@ PrefabInstance:
   m_Modification:
     m_TransformParent: {fileID: 0}
     m_Modifications:
+    - target: {fileID: 866923284, guid: ed149d964767cfb4ba48909e6ebc427c, type: 3}
+      propertyPath: mainEngineFuelUseRate
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 866923284, guid: ed149d964767cfb4ba48909e6ebc427c, type: 3}
+      propertyPath: thrusterFuelUseRate
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 1666014617693297778, guid: ed149d964767cfb4ba48909e6ebc427c,
         type: 3}
       propertyPath: m_Name
