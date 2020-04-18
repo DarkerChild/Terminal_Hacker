@@ -106,26 +106,26 @@ public class Rocket : MonoBehaviour
         }
     }
 
-    void OnTriggerEnter(Collider Collider)
+    void OnTriggerEnter(Collider collider)
     {
-        PickupFuel(Collider);
+        PickupFuel(collider);
     }
 
-    private void PickupFuel(Collider Collider)
+    private void PickupFuel(Collider collider)
     {
-        if (Collider.gameObject.tag == "Fuel")
+        if (collider.gameObject.tag == "Fuel")
         {
             currentFuelLevel += 100;
             ParticleSystem fuelPickupParticles;
-            fuelPickupParticles = Collider.gameObject.GetComponentInChildren<ParticleSystem>();
+            fuelPickupParticles = collider.gameObject.GetComponentInChildren<ParticleSystem>();
             fuelPickupParticles.Play();
 
             MeshRenderer fuelPickupMeshRenderer;
-            fuelPickupMeshRenderer = Collider.gameObject.GetComponentInChildren<MeshRenderer>();
+            fuelPickupMeshRenderer = collider.gameObject.GetComponentInChildren<MeshRenderer>();
             fuelPickupMeshRenderer.enabled = false;
 
             Collider fuelPickupCollider;
-            fuelPickupCollider = Collider.gameObject.GetComponent<Collider>();
+            fuelPickupCollider = collider.gameObject.GetComponent<Collider>();
             fuelPickupCollider.enabled = false;
         }
     }
@@ -160,8 +160,6 @@ public class Rocket : MonoBehaviour
 
     private void resetPosition()
     {
-        //transform.rotation.
-
         rigidBody.freezeRotation = true;
         rigidBody.velocity = Vector3.zero;
         rigidBody.angularVelocity = Vector3.zero;
