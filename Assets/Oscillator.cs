@@ -4,7 +4,7 @@ using UnityEngine;
 
 public class Oscillator : MonoBehaviour
 {
-    [SerializeField] [Range(0, 1)] float movementFactor; //0 for notmoved, 1 for fully moved //TODO Remove from inspector later
+    float movementFactor;
     [SerializeField] Vector3 movementVector = new Vector3(10f, 10f, 10f); //The Maximum offset from starting position
     [SerializeField] [Min(0.001f)]float cycleTime = 2f; //Number of seconds per cycle
 
